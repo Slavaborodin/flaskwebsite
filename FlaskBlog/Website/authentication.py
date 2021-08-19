@@ -24,6 +24,6 @@ def signup():
 
 @authentication.route("/Log-out")
 def logout():
-    print ("Logging out")
+    print ("Logging out:")
     return redirect(url_for("views.home"))
 

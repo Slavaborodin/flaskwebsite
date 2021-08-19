@@ -1,18 +1,13 @@
 import os
+import secrets
 
 
-from flask import Flask,request,render_template,Blueprint,redirect
+from flask import Flask,request,render_template,Blueprint,redirect,session
 from os import path
 
-from flask.globals import session 
 from flask_login import LoginManager
 from flaskext.mysql import MySQL
 from flask.helpers import url_for
-
-
-#import the Blueprint from the views file  
-#from .views import views
-#from .authentication import authentication
 
 app = Flask(__name__)
 
@@ -25,30 +20,11 @@ app.config['MYSQL_DATABASE_DB'] = 'Website'
 #initialise db startup
 mysql.init_app(app)
 
-#authentication=Blueprint("authentication", __name__)
-
-"""
-
-def create_app():
-    #initialising the app
-    
-   
-    #secret key 
-    app.config['SECRET_KEY']="helloworld"
-    
-    #connect to db
-    conn=mysql.connect()
-    cursor=conn.cursor()
-
-
-    
-    app.register_blueprint(views,url_prefix="/")
-    app.register_blueprint(authentication,url_prefix="/")
-    
-    return app
-"""
-
 app = Flask(__name__)
+#secret key 
+app.config['SECRET_KEY']=secrets.token_urlsafe(16)
+
+print(secrets.token_urlsafe(16))
 
 # shows the home view
 @app.route("/login",methods=['GET','POST'])
@@ -57,28 +33,31 @@ def login():
     #error message to tell user when something goes wrong 
     error_msg=''
 
-
     if request.method == 'POST' and 'email' in request.form and 'password' in request.form:
         #get user credentials     
-        email=request.form.get("email")
-        password=request.form.get("password")
+        email=request.form['email'].strip()
+        password=request.form['password'].strip()
 
         conn=mysql.connect()
         cursor=conn.cursor()
 
-        cursor.execute('SELECT * FROM User_Logins where user_username =%s and user_password =%s', (email,password,))
+        cursor.execute('SELECT * FROM User_Logins where user_email =%s and user_password =%s', (email,password,))
 
         account_status = cursor.fetchone()
 
-        if account_status:
+        if  account_status:
             session['loggedin'] = True
-            session['id']= account_status['user_id']
-            session['username'] = account_status['user_username']
+            session["EMAIL"] = account_status[1] 
+            print(session)
+            session["PASSWORD"] = account_status[2]
+            print(session)
             return 'Logged in Successfully'
+            # return redirect(url_for("profile"))
+           
         else:
             error_msg='Incorrect username/password'
             print(error_msg)
-
+            return redirect(url_for("login"))
 
     return render_template("login.htm",msg=error_msg)
 
@@ -101,7 +80,6 @@ def logout():
 @app.route("/")
 def home():
     return render_template("home.htm")    
-
 
 
 if __name__ == "__main__":

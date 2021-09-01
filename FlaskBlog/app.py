@@ -2,12 +2,13 @@ import os
 import secrets
 
 
-from flask import Flask,request,render_template,Blueprint,redirect,session
-from os import path
+from flask import Flask,request,render_template,Blueprint,redirect,session,flash
+from os import error, path
 
 from flask_login import LoginManager
 from flaskext.mysql import MySQL
-from flask.helpers import url_for
+from flask.helpers import flash, url_for
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
@@ -80,13 +81,21 @@ def signup():
         get_useraccount=cursor.fetchone()
 
         if get_useraccount:
-            display_msg='Sorry this account already exists!'
+            flash('Sorry this account already exists!',error=error)
         elif not username or not email or not pass1 or not pass2:
-            display_msg='Please fill out all components of the webform'
+            flash('Please fill out all components of the webform',error=error)
+        elif pass1 != pass2:
+            flash('Passwords don\'t match!',category=error)
+        elif len(username)<2:
+            flash('Username is too short', error=error)
+        elif len(pass1) < 6:
+            flash('Password is too short',error=error)
+        elif len(email) < 3: 
+            flash ('Email Address is Invalid', error=error)    
         else:
-            cursor.execute ('INSERT INTO User_Logins VALUES (%s,%s,%s)', username,email,pass1)
+            cursor.execute ('INSERT INTO User_Logins VALUES (%s,%s,%s)', username,email,generate_password_hash(pass1,method='sha256'))
             mysql.connection.comit()
-            display_msg='You have now registered, Thank you!'
+            flash('User has been created!')
 
     elif request.method == 'POST':
 

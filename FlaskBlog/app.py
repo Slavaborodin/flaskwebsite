@@ -63,17 +63,46 @@ def login():
 
 @app.route("/Sign-up", methods=['GET','POST'])
 def signup():
-    username=request.form.get("username")
-    email=request.form.get("email")
-    pass1=request.form.get("password1")
-    pass2=request.form.get("password2")
 
-    return render_template("signup.htm")
+    display_msg = '' 
+    if request.method == 'POST' and 'username' in request.form and 'password1' in request.form and 'password2' in request.form and 'email' in request.form:
+        username=request.form.get("username")
+        email=request.form.get("email")
+        pass1=request.form.get("password1")
+        pass2=request.form.get("password2")
+
+        conn=mysql.connect()
+        cursor=conn.cursor()
+
+        cursor.execute('SELECT * FROM User_Logins where user_username =%s' , (username,))
+
+        get_useraccount=cursor.fetchone()
+
+        if get_useraccount:
+            display_msg='Sorry this account already exists!'
+        elif not username or not email or not pass1 or not pass2:
+            display_msg='Please fill out all components of the webform'
+        else:
+            cursor.execute ('INSERT INTO User_Logins VALUES (%s,%s,%s)', username,email,pass1)
+            mysql.connection.comit()
+            display_msg='You have now registered, Thank you!'
+
+    elif request.method == 'POST':
+
+        #return error if form is empty
+        display_msg= 'The form has not been filled out, please fill out to proceed'
+
+    return render_template("signup.htm",msg=display_msg)
 
 
 @app.route("/Log-out")
 def logout():
-    return redirect(url_for("home.htm"))
+
+    session.pop('loggedin',None)
+    session.pop('EMAIL',None)
+    session.pop('PASSWORD',None)
+
+    return redirect(url_for("login"))
 
 
 @app.route("/home")

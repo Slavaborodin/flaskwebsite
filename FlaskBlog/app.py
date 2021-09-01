@@ -47,6 +47,7 @@ def login():
 
         if  account_status:
             session['loggedin'] = True
+            session['id'] = account_status[0]
             session["EMAIL"] = account_status[1] 
             print(session)
             session["PASSWORD"] = account_status[2]
@@ -110,6 +111,29 @@ def logout():
 def home():
     return render_template("home.htm")    
 
+
+@app.route("/loggedin/home")
+def loggedinhome():
+
+    if 'loggedin' in session:
+        # if the user is logged return their session 
+        return render_template('home.htm',username=session['username'])
+
+    #otherwise prompt the user to log in 
+    return redirect(url_for('login'))
+
+@app.route("/loggedin/useraccount")
+def useraccount():
+
+    if 'loggedin' in session:
+        conn=mysql.connect()
+        cursor=conn.cursor()
+        cursor.execute('SELECT * FROM User_Logins where user_id =%s' , (session['user_id'],))
+        
+        get_useraccount=cursor.fetchone()
+        return render_template('profile.htm',get_useraccount=get_useraccount)
+
+    return redirect(url_for('login'))    
 
 if __name__ == "__main__":
     app.run(debug=True)
